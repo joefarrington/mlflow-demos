@@ -1,0 +1,3 @@
+name: mlflow-demos
+
+conda_env: environment.yaml
