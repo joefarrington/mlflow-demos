@@ -74,6 +74,7 @@ def train_eval_model(cfg):
 
         mlflow.log_param("alpha", alpha)
         mlflow.log_param("l1_ratio", l1_ratio)
+        mlflow.log_param("random_state", random_state)
 
         mlflow.log_metric("rmse", rmse)
         mlflow.log_metric("r2", r2)
