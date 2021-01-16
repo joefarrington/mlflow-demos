@@ -100,4 +100,4 @@ dependencies:
       - websocket-client==0.57.0
       - werkzeug==1.0.1
       - yarl==1.6.3
-prefix: /Users/joefarrington/opt/miniconda3/envs/mlflow-demo
+prefix: /Users/joefarrington/opt/miniconda3/envs/mlflow-demos
