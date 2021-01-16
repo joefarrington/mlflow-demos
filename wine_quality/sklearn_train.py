@@ -45,13 +45,13 @@ def train_eval_model(cfg):
     # TODO: Understand why we seem to need the underscores
     # TODO: Increase flexibility so we can choose an sklearn model and supply
     # different hyperparameters (and, eventually, ranges)
-    train_path = cfg._dataset_.train_path
-    valid_path = cfg._dataset_.valid_path
-    label_column = cfg._dataset_.label_column
+    train_path = cfg.dataset.train_path
+    valid_path = cfg.dataset.valid_path
+    label_column = cfg.dataset.label_column
 
-    alpha = cfg._sklearn_model_.alpha
-    l1_ratio = cfg._sklearn_model_.l1_ratio
-    random_state = cfg._sklearn_model_.random_state
+    alpha = cfg.sklearn_model.alpha
+    l1_ratio = cfg.sklearn_model.l1_ratio
+    random_state = cfg.sklearn_model.random_state
 
     X_train, y_train = load_data(train_path, label_column)
     X_valid, y_valid = load_data(valid_path, label_column)

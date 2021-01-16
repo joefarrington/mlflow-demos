@@ -1,4 +1,4 @@
-# @package __group__
+# @package _group_
 label_column: "quality"
 train_path: "../../../data/red_wine_train.csv"
 valid_path: "../../../data/red_wine_valid.csv"
