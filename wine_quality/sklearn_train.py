@@ -58,7 +58,7 @@ def train_eval_model():
 
         (rmse, mae, r2) = eval_metrics(y_valid, y_pred)
 
-        print(f"ElasticNet model (alpha={alpha}, l1_ratio={l1_ratio}:")
+        print(f"ElasticNet model (alpha={alpha}, l1_ratio={l1_ratio}):")
         print(f"    Validation set RMSE: {rmse:.2f}")
         print(f"    Validation set MAE: {mae:.2f}")
         print(f"    Validation set R2: {r2:.2f}")
