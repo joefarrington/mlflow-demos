@@ -8,6 +8,9 @@ from pathlib import Path
 import warnings
 import sys
 
+from omegaconf import DictConfig, OmegaConf
+import hydra
+
 import pandas as pd
 import numpy as np
 from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
@@ -18,18 +21,6 @@ import mlflow
 import mlflow.sklearn
 
 import logging
-
-DATA_PATH = Path("data")
-TRAIN_PATH = DATA_PATH.joinpath("red_wine_train.csv")
-VALID_PATH = DATA_PATH.joinpath("red_wine_valid.csv")
-
-LABEL_COL = "quality"
-
-SEED = 5
-
-# ElasticNet hyperparameters
-alpha = 0.5
-l1_ratio = 0.5
 
 
 def eval_metrics(actual, pred):
@@ -46,12 +37,30 @@ def load_data(path, label_col):
     return X, y
 
 
-def train_eval_model():
-    X_train, y_train = load_data(TRAIN_PATH, LABEL_COL)
-    X_valid, y_valid = load_data(VALID_PATH, LABEL_COL)
+@hydra.main(config_path="conf")
+def train_eval_model(cfg):
+
+    print(OmegaConf.to_yaml(cfg))
+
+    # TODO: Understand why we seem to need the underscores
+    # TODO: Increase flexibility so we can choose an sklearn model and supply
+    # different hyperparameters (and, eventually, ranges)
+    train_path = cfg._dataset_.train_path
+    valid_path = cfg._dataset_.valid_path
+    label_column = cfg._dataset_.label_column
+
+    alpha = cfg._sklearn_model_.alpha
+    l1_ratio = cfg._sklearn_model_.l1_ratio
+    random_state = cfg._sklearn_model_.random_state
+
+    X_train, y_train = load_data(train_path, label_column)
+    X_valid, y_valid = load_data(valid_path, label_column)
+
+    # TODO: Update way we deal with paths and hydra to make this cleaner
+    mlflow.set_tracking_uri("../../../mlruns")
 
     with mlflow.start_run():
-        reg = ElasticNet(alpha=alpha, l1_ratio=l1_ratio, random_state=SEED)
+        reg = ElasticNet(alpha=alpha, l1_ratio=l1_ratio, random_state=random_state)
         reg.fit(X_train, y_train)
 
         y_pred = reg.predict(X_valid)
