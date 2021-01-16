@@ -136,3 +136,6 @@ wine_quality/notebook_playground
 
 # Data folders
 wine_quality/data
+
+# MLflow run data
+mlruns
