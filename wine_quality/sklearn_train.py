@@ -19,7 +19,7 @@ import mlflow.sklearn
 
 import logging
 
-DATA_PATH = Path("../data")
+DATA_PATH = Path("data")
 TRAIN_PATH = DATA_PATH.joinpath("red_wine_train.csv")
 VALID_PATH = DATA_PATH.joinpath("red_wine_valid.csv")
 
