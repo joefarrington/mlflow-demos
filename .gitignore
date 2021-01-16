@@ -132,7 +132,7 @@ dmypy.json
 .vscode
 
 # Notebook folders for initial code checking
-.wine_quality/notebook_playground
+wine_quality/notebook_playground
 
 # Data folders
-.wine_quality/data
+wine_quality/data
