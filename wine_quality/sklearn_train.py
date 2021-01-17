@@ -40,7 +40,7 @@ def load_data(path, label_col):
     return X, y
 
 
-@hydra.main(config_path="conf")
+@hydra.main(config_path="conf", config_name="config")
 def train_eval_model(cfg):
 
     print(OmegaConf.to_yaml(cfg))
@@ -55,7 +55,7 @@ def train_eval_model(cfg):
     l1_ratio = cfg.sklearn_model.l1_ratio
     random_state = cfg.sklearn_model.random_state
 
-    cwd = hydra.utils.get_original_cwd()
+    cwd = Path.cwd()
     X_train, y_train = load_data(Path(cwd).joinpath(train_path), label_column)
     X_valid, y_valid = load_data(Path(cwd).joinpath(valid_path), label_column)
 
@@ -82,9 +82,7 @@ def train_eval_model(cfg):
         mlflow.log_metric("r2", r2)
         mlflow.log_metric("mae", mae)
 
-        mlflow.log_artifact(Path.cwd().joinpath(".hydra/config.yaml"))
-        mlflow.log_artifact(Path.cwd().joinpath(".hydra/hydra.yaml"))
-        mlflow.log_artifact(Path.cwd().joinpath(".hydra/overrides.yaml"))
+        mlflow.log_artifact(cwd.joinpath("hydra_output"))
 
         mlflow.sklearn.log_model(reg, "model")
 
