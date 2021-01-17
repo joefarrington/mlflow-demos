@@ -140,5 +140,6 @@ wine_quality/data
 # MLflow run data
 mlruns
 
-# Hydra logs
-outputs
+# Hydra output
+hydra_output
+
