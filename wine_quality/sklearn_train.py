@@ -6,6 +6,8 @@
 
 # Using data from http://archive.ics.uci.edu/ml/datasets/Wine+Quality
 
+# TODO add in ability to set experiment name and other details for logging
+
 import os
 from pathlib import Path
 import warnings
@@ -16,6 +18,7 @@ import hydra
 
 import pandas as pd
 import numpy as np
+import sklearn
 from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
 from sklearn.model_selection import train_test_split
 from sklearn.linear_model import ElasticNet
@@ -45,15 +48,9 @@ def train_eval_model(cfg):
 
     print(OmegaConf.to_yaml(cfg))
 
-    # TODO: Increase flexibility so we can choose an sklearn model and supply
-    # different hyperparameters (and, eventually, ranges)
     train_path = cfg.dataset.train_path
     valid_path = cfg.dataset.valid_path
     label_column = cfg.dataset.label_column
-
-    alpha = cfg.sklearn_model.alpha
-    l1_ratio = cfg.sklearn_model.l1_ratio
-    random_state = cfg.sklearn_model.random_state
 
     cwd = Path.cwd()
     X_train, y_train = load_data(Path(cwd).joinpath(train_path), label_column)
@@ -62,21 +59,23 @@ def train_eval_model(cfg):
     mlflow.set_tracking_uri(str(Path(cwd).joinpath("mlruns")))
 
     with mlflow.start_run():
-        reg = ElasticNet(alpha=alpha, l1_ratio=l1_ratio, random_state=random_state)
+
+        reg = hydra.utils.instantiate(cfg.sklearn_model)
         reg.fit(X_train, y_train)
 
         y_pred = reg.predict(X_valid)
 
         (rmse, mae, r2) = eval_metrics(y_valid, y_pred)
 
-        print(f"ElasticNet model (alpha={alpha}, l1_ratio={l1_ratio}):")
-        print(f"    Validation set RMSE: {rmse:.2f}")
-        print(f"    Validation set MAE: {mae:.2f}")
-        print(f"    Validation set R2: {r2:.2f}")
+        print(f"Validation set RMSE: {rmse:.2f}")
+        print(f"Validation set MAE: {mae:.2f}")
+        print(f"Validation set R2: {r2:.2f}")
 
-        mlflow.log_param("alpha", alpha)
-        mlflow.log_param("l1_ratio", l1_ratio)
-        mlflow.log_param("random_state", random_state)
+        for key, value in cfg.sklearn_model.items():
+            if key == "_target_":
+                pass
+            else:
+                mlflow.log_param(key, value)
 
         mlflow.log_metric("rmse", rmse)
         mlflow.log_metric("r2", r2)
