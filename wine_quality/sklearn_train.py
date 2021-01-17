@@ -1,5 +1,8 @@
-# Based on the example from the mlflow GitHub repository
+# Initially based on the example from the mlflow GitHub repository
 # https://github.com/mlflow/mlflow/blob/master/examples/sklearn_elasticnet_wine/train.py
+
+# Incorporating Hydra for configuration following the repo of ymym3412
+# https://github.com/ymym3412/Hydra-MLflow-experiment-management
 
 # Using data from http://archive.ics.uci.edu/ml/datasets/Wine+Quality
 
@@ -42,7 +45,6 @@ def train_eval_model(cfg):
 
     print(OmegaConf.to_yaml(cfg))
 
-    # TODO: Understand why we seem to need the underscores
     # TODO: Increase flexibility so we can choose an sklearn model and supply
     # different hyperparameters (and, eventually, ranges)
     train_path = cfg.dataset.train_path
@@ -53,11 +55,11 @@ def train_eval_model(cfg):
     l1_ratio = cfg.sklearn_model.l1_ratio
     random_state = cfg.sklearn_model.random_state
 
-    X_train, y_train = load_data(train_path, label_column)
-    X_valid, y_valid = load_data(valid_path, label_column)
+    cwd = hydra.utils.get_original_cwd()
+    X_train, y_train = load_data(Path(cwd).joinpath(train_path), label_column)
+    X_valid, y_valid = load_data(Path(cwd).joinpath(valid_path), label_column)
 
-    # TODO: Update way we deal with paths and hydra to make this cleaner
-    mlflow.set_tracking_uri("../../../mlruns")
+    mlflow.set_tracking_uri(str(Path(cwd).joinpath("mlruns")))
 
     with mlflow.start_run():
         reg = ElasticNet(alpha=alpha, l1_ratio=l1_ratio, random_state=random_state)
@@ -79,6 +81,10 @@ def train_eval_model(cfg):
         mlflow.log_metric("rmse", rmse)
         mlflow.log_metric("r2", r2)
         mlflow.log_metric("mae", mae)
+
+        mlflow.log_artifact(Path.cwd().joinpath(".hydra/config.yaml"))
+        mlflow.log_artifact(Path.cwd().joinpath(".hydra/hydra.yaml"))
+        mlflow.log_artifact(Path.cwd().joinpath(".hydra/overrides.yaml"))
 
         mlflow.sklearn.log_model(reg, "model")
 
