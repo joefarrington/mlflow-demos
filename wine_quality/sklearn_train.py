@@ -12,6 +12,7 @@ import os
 from pathlib import Path
 import warnings
 import sys
+import git
 
 from omegaconf import DictConfig, OmegaConf
 import hydra
@@ -43,8 +44,16 @@ def load_data(path, label_col):
 @hydra.main(config_path="conf", config_name="config")
 def train_eval_model(cfg):
 
+    # Only proceed with the experiment if the repository is clean
+    repo = git.Repo(cfg.repo)
+    assert (
+        repo.is_dirty() is False
+    ), "Git repository is dirty, please commit before running experiment"
+
+    # Print the configuration
     print(OmegaConf.to_yaml(cfg))
 
+    # Load the data
     train_path = cfg.dataset.train_path
     valid_path = cfg.dataset.valid_path
     label_column = cfg.dataset.label_column
@@ -53,13 +62,18 @@ def train_eval_model(cfg):
     X_train, y_train = load_data(Path(cwd).joinpath(train_path), label_column)
     X_valid, y_valid = load_data(Path(cwd).joinpath(valid_path), label_column)
 
+    # Tell MLflow where to log the experiment
     mlflow.set_tracking_uri(str(Path(cwd).joinpath("mlruns")))
 
     with mlflow.start_run():
 
+        # Instantiate the model based on config file
         reg = hydra.utils.instantiate(cfg.sklearn_model)
+
+        # Fit the model
         reg.fit(X_train, y_train)
 
+        # Predict on the validation set and calculate metrics
         y_pred = reg.predict(X_valid)
 
         (rmse, mae, r2) = eval_metrics(y_valid, y_pred)
@@ -68,18 +82,22 @@ def train_eval_model(cfg):
         print(f"Validation set MAE: {mae:.2f}")
         print(f"Validation set R2: {r2:.2f}")
 
+        # Log all of the hyperparameters to MLflow
         for key, value in cfg.sklearn_model.items():
             if key == "_target_":
                 pass
             else:
                 mlflow.log_param(key, value)
 
+        # Log the metrics to MLflow
         mlflow.log_metric("rmse", rmse)
         mlflow.log_metric("r2", r2)
         mlflow.log_metric("mae", mae)
 
+        # Log the hydra logs as an MLflow artifact
         mlflow.log_artifact(cwd.joinpath("hydra_output"))
 
+        # Log the model to MLflow
         mlflow.sklearn.log_model(reg, "model")
 
 

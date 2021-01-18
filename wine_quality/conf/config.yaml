@@ -2,3 +2,4 @@ hydra:
   run:
     dir: .
   output_subdir: ./hydra_output
+repo: ~/Documents/CDT/other_learning/mlflow/mlflow-demos
