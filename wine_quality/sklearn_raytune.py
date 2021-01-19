@@ -10,6 +10,7 @@ import hydra
 import pandas as pd
 import numpy as np
 import sklearn
+from sklearn.linear_model import ElasticNet
 from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
 from sklearn.model_selection import train_test_split
 from urllib.parse import urlparse
@@ -36,22 +37,20 @@ def load_data(path, label_col):
 
 @mlflow_mixin
 def train_fn(config):
-    reg = sklearn.linear_model.ElasticNet(
-        alpha=self.config["alpha"], l1_ratio=self.config["l1_ratio"], random_state=5
-    )
+    reg = ElasticNet(alpha=config["alpha"], l1_ratio=config["l1_ratio"], random_state=5)
 
-    reg.fit(self.config["X_train"], self.config["y_train"])
+    reg.fit(config["X_train"], config["y_train"])
 
-    y_pred = reg.predict(self.config["X_valid"])
+    y_pred = reg.predict(config["X_valid"])
 
     # Predict on the validation set and calculate metrics
-    y_pred = reg.predict(self.config["X_valid"])
+    y_pred = reg.predict(config["X_valid"])
 
-    (rmse, mae, r2) = eval_metrics(self.config["y_valid"], y_pred)
+    (rmse, mae, r2) = eval_metrics(config["y_valid"], y_pred)
 
     # Log all of the hyperparameters to MLflow
-    mlflow.log_param("alpha", self.config["alpha"])
-    mlflow.log_param("l1_ratio", self.config["l1_ratio"])
+    mlflow.log_param("alpha", config["alpha"])
+    mlflow.log_param("l1_ratio", config["l1_ratio"])
 
     # Log the metrics to MLflow
     mlflow.log_metric("rmse", rmse)
@@ -80,7 +79,11 @@ def main(cfg):
     X_train, y_train = load_data(Path(cwd).joinpath(train_path), label_column)
     X_valid, y_valid = load_data(Path(cwd).joinpath(valid_path), label_column)
 
-    mlflow.create_experiment("wine_quality_raytune")
+    print("Data loaded!")
+
+    experiment_name = "wqr3"
+
+    mlflow.create_experiment(experiment_name)
 
     config = {
         "alpha": tune.choice([0.1, 0.5, 1]),
@@ -90,9 +93,13 @@ def main(cfg):
         "X_valid": X_valid,
         "y_valid": y_valid,
         "mlflow": {
-            "experiment_name": "wine_quality_raytune",
+            "experiment_name": experiment_name,
             "tracking_uri": mlflow.get_tracking_uri(),
         },
     }
 
-    tune.run(train_fn, config)
+    tune.run(train_fn, config=config, num_samples=10, local_dir=cwd)
+
+
+if __name__ == "__main__":
+    main()
