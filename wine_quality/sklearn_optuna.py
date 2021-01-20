@@ -46,18 +46,8 @@ def load_data(path, label_col):
     return X, y
 
 
-hp_config = {
-    "alpha": {
-        "type": "float",
-        "low": 1e-4,
-        "high": 1,
-        "step": None,
-        "log": True,
-    },
-    "l1_ratio": {"type": "float", "low": 1e-4, "high": 1, "step": None, "log": True},
-}
-
-
+# TODO Improve this class to handle step/log flags properly
+# Possible the best way to do it is by matching keys
 class SetHPs:
     def __init__(self, hp_config):
         self.hp_config_float = {}
@@ -81,7 +71,7 @@ class SetHPs:
                 name=name,
                 low=self.hp_config_float[name]["low"],
                 high=self.hp_config_float[name]["high"],
-                step=self.hp_config_float[name]["step"],
+                # step=self.hp_config_float[name]["step"],
                 log=self.hp_config_float[name]["log"],
             )
 
@@ -89,15 +79,16 @@ class SetHPs:
 
 
 class Objective:
-    def __init__(self, hp):
-        self.hp = hp
+    def __init__(self, cfg):
+        self.cfg = cfg
+        self.hp = SetHPs(cfg.sklearn_tune.search_ranges)
 
     def __call__(self, trial):
 
         # Load the data
-        train_path = "data/red_wine_train.csv"  # cfg.dataset.train_path
-        valid_path = "data/red_wine_valid.csv"  # cfg.dataset.valid_path
-        label_column = "quality"  # cfg.dataset.label_column
+        train_path = self.cfg.dataset.train_path
+        valid_path = self.cfg.dataset.valid_path
+        label_column = self.cfg.dataset.label_column
 
         cwd = Path.cwd()
         X_train, y_train = load_data(Path(cwd).joinpath(train_path), label_column)
@@ -110,13 +101,10 @@ class Objective:
 
             # Instantiate the model based on config file
             current_hps = self.hp.suggest_hyperparameters(trial)
+            print(current_hps)
 
-            reg = sklearn.linear_model.ElasticNet()
-            reg.set_params(current_hps)
-
-            #        reg = sklearn.linear_model.ElasticNet(
-            #           alpha=alpha, l1_ratio=l1_ratio, random_state=5
-            #        )
+            reg = hydra.utils.instantiate(self.cfg.sklearn_tune.model)
+            reg.set_params(**current_hps)
 
             # Fit the model
             reg.fit(X_train, y_train)
@@ -131,14 +119,8 @@ class Objective:
             print(f"Validation set R2: {r2:.2f}")
 
             # Log all of the hyperparameters to MLflow
-            # for key, value in cfg.sklearn_model.items():
-            #    if key == "_target_":
-            #        pass
-            #    else:
-            #        mlflow.log_param(key, value)
-
-            mlflow.log_param("alpha", alpha)
-            mlflow.log_param("l1_ratio", l1_ratio)
+            for key, value in current_hps.items():
+                mlflow.log_param(key, value)
 
             # Log the metrics to MLflow
             mlflow.log_metric("rmse", rmse)
@@ -154,7 +136,8 @@ class Objective:
             return rmse
 
 
-def main():
+@hydra.main(config_path="conf", config_name="config")
+def main(cfg):
 
     # Only proceed with the experiment if the repository is clean
     repo = git.Repo("~/Documents/CDT/other_learning/mlflow/mlflow-demos")
@@ -162,12 +145,10 @@ def main():
         repo.is_dirty() is False
     ), "Git repository is dirty, please commit before running experiment"
 
-    hp = SetHPs(hp_config)
-
     study = optuna.create_study(
         study_name="wine-quality-elasticnet", direction="minimize"
     )
-    study.optimize(Objective(hp), n_trials=10)
+    study.optimize(Objective(cfg), n_trials=10)
 
 
 if __name__ == "__main__":
