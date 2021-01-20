@@ -88,66 +88,70 @@ class SetHPs:
         return out_dict
 
 
-def objective(trial):
+class Objective:
+    def __init__(self, hp):
+        self.hp = hp
 
-    # Load the data
-    train_path = "data/red_wine_train.csv"  # cfg.dataset.train_path
-    valid_path = "data/red_wine_valid.csv"  # cfg.dataset.valid_path
-    label_column = "quality"  # cfg.dataset.label_column
+    def __call__(self, trial):
 
-    cwd = Path.cwd()
-    X_train, y_train = load_data(Path(cwd).joinpath(train_path), label_column)
-    X_valid, y_valid = load_data(Path(cwd).joinpath(valid_path), label_column)
+        # Load the data
+        train_path = "data/red_wine_train.csv"  # cfg.dataset.train_path
+        valid_path = "data/red_wine_valid.csv"  # cfg.dataset.valid_path
+        label_column = "quality"  # cfg.dataset.label_column
 
-    # Tell MLflow where to log the experiment
-    # mlflow.set_tracking_uri(str(Path(cwd).joinpath("mlruns")))
+        cwd = Path.cwd()
+        X_train, y_train = load_data(Path(cwd).joinpath(train_path), label_column)
+        X_valid, y_valid = load_data(Path(cwd).joinpath(valid_path), label_column)
 
-    with mlflow.start_run():
+        # Tell MLflow where to log the experiment
+        # mlflow.set_tracking_uri(str(Path(cwd).joinpath("mlruns")))
 
-        # Instantiate the model based on config file
-        current_hps = hp.suggest_hyperparameters(trial)
+        with mlflow.start_run():
 
-        reg = sklearn.linear_model.ElasticNet()
-        reg.set_params(current_hps)
+            # Instantiate the model based on config file
+            current_hps = self.hp.suggest_hyperparameters(trial)
 
-        #        reg = sklearn.linear_model.ElasticNet(
-        #           alpha=alpha, l1_ratio=l1_ratio, random_state=5
-        #        )
+            reg = sklearn.linear_model.ElasticNet()
+            reg.set_params(current_hps)
 
-        # Fit the model
-        reg.fit(X_train, y_train)
+            #        reg = sklearn.linear_model.ElasticNet(
+            #           alpha=alpha, l1_ratio=l1_ratio, random_state=5
+            #        )
 
-        # Predict on the validation set and calculate metrics
-        y_pred = reg.predict(X_valid)
+            # Fit the model
+            reg.fit(X_train, y_train)
 
-        (rmse, mae, r2) = eval_metrics(y_valid, y_pred)
+            # Predict on the validation set and calculate metrics
+            y_pred = reg.predict(X_valid)
 
-        print(f"Validation set RMSE: {rmse:.2f}")
-        print(f"Validation set MAE: {mae:.2f}")
-        print(f"Validation set R2: {r2:.2f}")
+            (rmse, mae, r2) = eval_metrics(y_valid, y_pred)
 
-        # Log all of the hyperparameters to MLflow
-        # for key, value in cfg.sklearn_model.items():
-        #    if key == "_target_":
-        #        pass
-        #    else:
-        #        mlflow.log_param(key, value)
+            print(f"Validation set RMSE: {rmse:.2f}")
+            print(f"Validation set MAE: {mae:.2f}")
+            print(f"Validation set R2: {r2:.2f}")
 
-        mlflow.log_param("alpha", alpha)
-        mlflow.log_param("l1_ratio", l1_ratio)
+            # Log all of the hyperparameters to MLflow
+            # for key, value in cfg.sklearn_model.items():
+            #    if key == "_target_":
+            #        pass
+            #    else:
+            #        mlflow.log_param(key, value)
 
-        # Log the metrics to MLflow
-        mlflow.log_metric("rmse", rmse)
-        mlflow.log_metric("r2", r2)
-        mlflow.log_metric("mae", mae)
+            mlflow.log_param("alpha", alpha)
+            mlflow.log_param("l1_ratio", l1_ratio)
 
-        # Log the hydra logs as an MLflow artifact
-        mlflow.log_artifact(cwd.joinpath("hydra_output"))
+            # Log the metrics to MLflow
+            mlflow.log_metric("rmse", rmse)
+            mlflow.log_metric("r2", r2)
+            mlflow.log_metric("mae", mae)
 
-        # Log the model to MLflow
-        mlflow.sklearn.log_model(reg, "model")
+            # Log the hydra logs as an MLflow artifact
+            mlflow.log_artifact(cwd.joinpath("hydra_output"))
 
-        return rmse
+            # Log the model to MLflow
+            mlflow.sklearn.log_model(reg, "model")
+
+            return rmse
 
 
 def main():
@@ -163,7 +167,7 @@ def main():
     study = optuna.create_study(
         study_name="wine-quality-elasticnet", direction="minimize"
     )
-    study.optimize(objective, n_trials=10)
+    study.optimize(Objective(hp), n_trials=10)
 
 
 if __name__ == "__main__":
