@@ -123,3 +123,7 @@ def main():
         study_name="wine-quality-elasticnet", direction="minimize"
     )
     study.optimize(objective, n_trials=10)
+
+
+if __name__ == "__main__":
+    main()
