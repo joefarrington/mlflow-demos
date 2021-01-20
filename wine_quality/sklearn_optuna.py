@@ -30,6 +30,7 @@ from sklearn.model_selection import train_test_split
 from urllib.parse import urlparse
 import mlflow
 import mlflow.sklearn
+from conf.hp_spaces.elasticnet import suggest_hyperparameters
 
 
 def eval_metrics(actual, pred):
@@ -44,12 +45,6 @@ def load_data(path, label_col):
     X = df.drop(label_col, axis=1)
     y = df[[label_col]]
     return X, y
-
-
-def suggest_hyperparameters(trial):
-    alpha = trial.suggest_float("alpha", 1e-4, 1, log=True)
-    l1_ratio = trial.suggest_float("l1_ratio", 1e-4, 1, log=True)
-    return alpha, l1_ratio
 
 
 def objective(trial):
