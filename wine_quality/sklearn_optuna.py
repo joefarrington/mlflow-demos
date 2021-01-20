@@ -88,11 +88,14 @@ def objective(trial):
         print(f"Validation set R2: {r2:.2f}")
 
         # Log all of the hyperparameters to MLflow
-        for key, value in cfg.sklearn_model.items():
-            if key == "_target_":
-                pass
-            else:
-                mlflow.log_param(key, value)
+        # for key, value in cfg.sklearn_model.items():
+        #    if key == "_target_":
+        #        pass
+        #    else:
+        #        mlflow.log_param(key, value)
+
+        mlflow.log_param("alpha", alpha)
+        mlflow.log_param("l1_ratio", l1_ratio)
 
         # Log the metrics to MLflow
         mlflow.log_metric("rmse", rmse)
@@ -111,7 +114,7 @@ def objective(trial):
 def main():
 
     # Only proceed with the experiment if the repository is clean
-    repo = git.Repo(cfg.repo)
+    repo = git.Repo("~/Documents/CDT/other_learning/mlflow/mlflow-demos")
     assert (
         repo.is_dirty() is False
     ), "Git repository is dirty, please commit before running experiment"
