@@ -49,12 +49,12 @@ def load_data(path, label_col):
 hp_config = {
     "alpha": {
         "type": "float",
-        "low": 0,
+        "low": 1e-4,
         "high": 1,
         "step": None,
         "log": True,
     },
-    "l1_ratio": {"type": "float", "low": 0, "high": 1, "step": None, "log": True},
+    "l1_ratio": {"type": "float", "low": 1e-4, "high": 1, "step": None, "log": True},
 }
 
 
