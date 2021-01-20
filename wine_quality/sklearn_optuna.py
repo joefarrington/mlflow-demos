@@ -78,6 +78,8 @@ class SetHPs:
         return out_dict
 
 
+# TODO: Think about just loading the data once, and calculating a hash for each file
+# that can then be logged in MLflow to confirm using same file each time.
 class Objective:
     def __init__(self, cfg):
         self.cfg = cfg
