@@ -30,7 +30,6 @@ from sklearn.model_selection import train_test_split
 from urllib.parse import urlparse
 import mlflow
 import mlflow.sklearn
-from conf.hp_spaces.elasticnet import suggest_hyperparameters
 
 
 def eval_metrics(actual, pred):
@@ -45,6 +44,48 @@ def load_data(path, label_col):
     X = df.drop(label_col, axis=1)
     y = df[[label_col]]
     return X, y
+
+
+hp_config = {
+    "alpha": {
+        "type": "float",
+        "low": 0,
+        "high": 1,
+        "step": None,
+        "log": True,
+    },
+    "l1_ratio": {"type": "float", "low": 0, "high": 1, "step": None, "log": True},
+}
+
+
+class SetHPs:
+    def __init__(self, hp_config):
+        self.hp_config_float = {}
+        self.hp_config_int = {}
+        self.hp_config_categorical = {}
+
+        for name in hp_config:
+            if hp_config[name]["type"] == "float":
+                self.hp_config_float[name] = hp_config[name]
+            elif hp_config[name]["type"] == "int":
+                self.hp_config_int[name] = hp_config[name]
+            elif hp_config[name]["type"] == "categorical":
+                self.hp_config_categorical[name] == hp_config[name]
+            else:
+                raise ValueError("Check hyperparameter search space types")
+
+    def suggest_hyperparameters(self, trial):
+        out_dict = {}
+        for name in self.hp_config_float.keys():
+            out_dict[name] = trial.suggest_float(
+                name=name,
+                low=self.hp_config_float[name]["low"],
+                high=self.hp_config_float[name]["high"],
+                step=self.hp_config_float[name]["step"],
+                log=self.hp_config_float[name]["log"],
+            )
+
+        return out_dict
 
 
 def objective(trial):
@@ -64,11 +105,14 @@ def objective(trial):
     with mlflow.start_run():
 
         # Instantiate the model based on config file
-        alpha, l1_ratio = suggest_hyperparameters(trial)
+        current_hps = hp.suggest_hyperparameters(trial)
 
-        reg = sklearn.linear_model.ElasticNet(
-            alpha=alpha, l1_ratio=l1_ratio, random_state=5
-        )
+        reg = sklearn.linear_model.ElasticNet()
+        reg.set_params(current_hps)
+
+        #        reg = sklearn.linear_model.ElasticNet(
+        #           alpha=alpha, l1_ratio=l1_ratio, random_state=5
+        #        )
 
         # Fit the model
         reg.fit(X_train, y_train)
@@ -113,6 +157,8 @@ def main():
     assert (
         repo.is_dirty() is False
     ), "Git repository is dirty, please commit before running experiment"
+
+    hp = SetHPs(hp_config)
 
     study = optuna.create_study(
         study_name="wine-quality-elasticnet", direction="minimize"
