@@ -88,9 +88,10 @@ class SetHPs:
 # TODO: Think about just loading the data once, and calculating a hash for each file
 # that can then be logged in MLflow to confirm using same file each time.
 class Objective:
-    def __init__(self, cfg):
+    def __init__(self, cfg, experiment_id):
         self.cfg = cfg
         self.hp = SetHPs(cfg.sklearn_tune.search_ranges)
+        self.experiment_id = experiment_id
 
     def __call__(self, trial):
 
@@ -106,7 +107,7 @@ class Objective:
         # Tell MLflow where to log the experiment
         # mlflow.set_tracking_uri(str(Path(cwd).joinpath("mlruns")))
 
-        with mlflow.start_run(experiment_id=self.cfg.sklearn_tune.experiment_id):
+        with mlflow.start_run(experiment_id=self.experiment_id):
 
             # Instantiate the model based on config file
             current_hps = self.hp.suggest_hyperparameters(trial)
@@ -160,13 +161,15 @@ def main(cfg):
     try:
         mlflow.create_experiment(cfg.sklearn_tune.experiment_id)
     except:
-        pass
+        experiment_id = mlflow.get_experiment_by_name(
+            cfg.sklearn_tune.experiment_id
+        ).experimend_id
 
     sampler = TPESampler(seed=cfg.sklearn_tune.random_state)
     study = optuna.create_study(
         study_name="wine-quality-elasticnet", direction="minimize", sampler=sampler
     )
-    study.optimize(Objective(cfg), n_trials=cfg.sklearn_tune.n_trials)
+    study.optimize(Objective(cfg, experiment_id), n_trials=cfg.sklearn_tune.n_trials)
 
 
 if __name__ == "__main__":
