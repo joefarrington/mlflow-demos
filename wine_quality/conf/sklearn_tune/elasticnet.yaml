@@ -12,3 +12,4 @@ search_ranges:
     low: 1e-4
     high: 1
     log: True
+random_state: 5

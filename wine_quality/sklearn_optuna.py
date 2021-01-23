@@ -21,6 +21,7 @@ from omegaconf import DictConfig, OmegaConf
 import hydra
 
 import optuna
+from optuna.samplers import TPESampler
 
 import pandas as pd
 import numpy as np
@@ -114,7 +115,9 @@ class Objective:
             print(current_hps)
 
             reg = hydra.utils.instantiate(self.cfg.sklearn_tune.model)
-            reg.set_params(**current_hps)
+            reg.set_params(
+                **current_hps, random_state=self.cfg.sklearn_tune.random_state
+            )
 
             # Fit the model
             reg.fit(X_train, y_train)
@@ -155,8 +158,9 @@ def main(cfg):
         repo.is_dirty() is False
     ), "Git repository is dirty, please commit before running experiment"
 
+    sampler = TPESampler(seed=cfg.sklearn_tune.random_state)
     study = optuna.create_study(
-        study_name="wine-quality-elasticnet", direction="minimize"
+        study_name="wine-quality-elasticnet", direction="minimize", sampler=sampler
     )
     study.optimize(Objective(cfg), n_trials=10)
 
