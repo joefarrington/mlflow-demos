@@ -161,7 +161,7 @@ def main(cfg):
     study = optuna.create_study(
         study_name="wine-quality-elasticnet", direction="minimize", sampler=sampler
     )
-    study.optimize(Objective(cfg), n_trials=10)
+    study.optimize(Objective(cfg), n_trials=cfg.sklearn_tune.n_trials)
 
 
 if __name__ == "__main__":

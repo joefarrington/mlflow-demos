@@ -13,3 +13,4 @@ search_ranges:
     high: 1
     log: True
 random_state: 5
+n_trials: 50
