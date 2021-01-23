@@ -63,7 +63,7 @@ class SetHPs:
                 self.hp_config_int[name] = OmegaConf.to_container(hp_config[name])
                 del self.hp_config_int[name]["type"]
             elif hp_config[name]["type"] == "categorical":
-                self.hp_config_categorical[name] == OmegaConf.to_container(
+                self.hp_config_categorical[name] = OmegaConf.to_container(
                     hp_config[name]
                 )
                 del self.hp_config_categorical[name]["type"]
@@ -79,11 +79,10 @@ class SetHPs:
         for name in self.hp_config_int.keys():
             out_dict[name] = trial.suggest_int(name=name, **self.hp_config_int[name])
         for name in self.hp_config_categorical.keys():
-            out_dict[name] = trial.suggest_categorial(
+            out_dict[name] = trial.suggest_categorical(
                 name=name, **self.hp_config_categorical[name]
             )
 
-        print(out_dict)
         return out_dict
 
 

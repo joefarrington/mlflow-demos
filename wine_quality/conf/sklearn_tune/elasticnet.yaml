@@ -12,15 +12,4 @@ search_ranges:
     low: 1e-4
     high: 1
     log: True
-  example_int:
-    type: "int"
-    low: 1
-    high: 5
-  example_categorical:
-    type: "categorical"
-    choices:
-      - "Hello"
-      - "Goodbye"
-      - "Au revoir"
-      - "Bonjour"
 random_state: 5
