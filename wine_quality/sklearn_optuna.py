@@ -159,6 +159,8 @@ def main(cfg):
 
     try:
         mlflow.create_experiment(cfg.sklearn_tune.experiment_id)
+    except:
+        pass
 
     sampler = TPESampler(seed=cfg.sklearn_tune.random_state)
     study = optuna.create_study(
