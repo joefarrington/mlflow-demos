@@ -23,4 +23,4 @@ search_ranges:
       - "Goodbye"
       - "Au revoir"
       - "Bonjour"
- random_state: 5
+random_state: 5
