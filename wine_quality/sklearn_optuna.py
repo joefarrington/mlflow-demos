@@ -47,8 +47,6 @@ def load_data(path, label_col):
     return X, y
 
 
-# TODO Improve this class to handle step/log flags properly
-# Possible the best way to do it is by matching keys
 class SetHPs:
     def __init__(self, hp_config):
         self.hp_config_float = {}
@@ -140,7 +138,7 @@ class Objective:
             mlflow.log_metric("mae", mae)
 
             # Log the hydra logs as an MLflow artifact
-            mlflow.log_artifact(cwd.joinpath("hydra_output"))
+            mlflow.log_artifact(cwd.joinpath(cfg.hydra.output_subdir))
 
             # Log the model to MLflow
             mlflow.sklearn.log_model(reg, "model")
