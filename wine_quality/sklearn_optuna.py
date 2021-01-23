@@ -138,7 +138,7 @@ class Objective:
             mlflow.log_metric("mae", mae)
 
             # Log the hydra logs as an MLflow artifact
-            mlflow.log_artifact(cwd.joinpath(cfg.hydra.output_subdir))
+            mlflow.log_artifact(cwd.joinpath(self.cfg.hydra.output_subdir))
 
             # Log the model to MLflow
             mlflow.sklearn.log_model(reg, "model")
