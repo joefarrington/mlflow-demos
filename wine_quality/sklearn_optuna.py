@@ -106,7 +106,7 @@ class Objective:
         # Tell MLflow where to log the experiment
         # mlflow.set_tracking_uri(str(Path(cwd).joinpath("mlruns")))
 
-        with mlflow.start_run(experiment_id=self.cfg.sklearn_model.experiment_id):
+        with mlflow.start_run(experiment_id=self.cfg.sklearn_tune.experiment_id):
 
             # Instantiate the model based on config file
             current_hps = self.hp.suggest_hyperparameters(trial)
