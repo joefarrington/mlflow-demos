@@ -56,13 +56,15 @@ class SetHPs:
 
         for name in hp_config:
             if hp_config[name]["type"] == "float":
-                self.hp_config_float[name] = hp_config[name]
+                self.hp_config_float[name] = OmegaConf.to_container(hp_config[name])
                 del self.hp_config_float[name]["type"]
             elif hp_config[name]["type"] == "int":
-                self.hp_config_int[name] = hp_config[name]
+                self.hp_config_int[name] = OmegaConf.to_container(hp_config[name])
                 del self.hp_config_int[name]["type"]
             elif hp_config[name]["type"] == "categorical":
-                self.hp_config_categorical[name] == hp_config[name]
+                self.hp_config_categorical[name] == OmegaConf.to_container(
+                    hp_config[name]
+                )
                 del self.hp_config_categorical[name]["type"]
             else:
                 raise ValueError("Check hyperparameter search space types")
