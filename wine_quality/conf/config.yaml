@@ -1,6 +1,6 @@
 hydra:
   run:
     dir: .
-  output_subdir: ./hydra_output/${now:%Y-%m-%d}/${now:%H-%M-%S-%f}
+  output_subdir: ./hydra_output/${now:%Y-%m-%d}/${now:%H-%M-%S.%f}
 repo: ~/Documents/CDT/other_learning/mlflow/mlflow-demos
 hydra_logdir: ${hydra:output_subdir}
