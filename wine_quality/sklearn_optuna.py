@@ -57,10 +57,13 @@ class SetHPs:
         for name in hp_config:
             if hp_config[name]["type"] == "float":
                 self.hp_config_float[name] = hp_config[name]
+                del hp_config_float[name]["type"]
             elif hp_config[name]["type"] == "int":
                 self.hp_config_int[name] = hp_config[name]
+                del hp_config_int[name]["type"]
             elif hp_config[name]["type"] == "categorical":
                 self.hp_config_categorical[name] == hp_config[name]
+                del hp_config_categorical[name]["type"]
             else:
                 raise ValueError("Check hyperparameter search space types")
 
@@ -68,13 +71,16 @@ class SetHPs:
         out_dict = {}
         for name in self.hp_config_float.keys():
             out_dict[name] = trial.suggest_float(
-                name=name,
-                low=self.hp_config_float[name]["low"],
-                high=self.hp_config_float[name]["high"],
-                # step=self.hp_config_float[name]["step"],
-                log=self.hp_config_float[name]["log"],
+                name=name, **self.hp_config_float[name]
+            )
+        for name in self.hp_config_int.keys():
+            out_dict[name] = trial.suggest_int(name=name, **self.hp_config_int[name])
+        for name in self.hp_config_categorical.keys():
+            out_dict[name] = trial.suggest_categorial(
+                name=name, **self.hp_config_categorical[name]
             )
 
+        print(out_dict)
         return out_dict
 
 
