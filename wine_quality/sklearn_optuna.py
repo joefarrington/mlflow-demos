@@ -157,6 +157,11 @@ def main(cfg):
         repo.is_dirty() is False
     ), "Git repository is dirty, please commit before running experiment"
 
+    try:
+        mlflow.create_experiment(cfg.sklearn_tune.experiment_id)
+    except:
+        mlflow.set_experiment(cfg.sklearn_tune.experiment_id)
+
     sampler = TPESampler(seed=cfg.sklearn_tune.random_state)
     study = optuna.create_study(
         study_name="wine-quality-elasticnet", direction="minimize", sampler=sampler
