@@ -106,7 +106,7 @@ class Objective:
         # Tell MLflow where to log the experiment
         # mlflow.set_tracking_uri(str(Path(cwd).joinpath("mlruns")))
 
-        with mlflow.start_run():
+        with mlflow.start_run(experiment_id=self.cfg.sklearn_model.experiment_id):
 
             # Instantiate the model based on config file
             current_hps = self.hp.suggest_hyperparameters(trial)
@@ -159,8 +159,6 @@ def main(cfg):
 
     try:
         mlflow.create_experiment(cfg.sklearn_tune.experiment_id)
-    except:
-        mlflow.set_experiment(cfg.sklearn_tune.experiment_id)
 
     sampler = TPESampler(seed=cfg.sklearn_tune.random_state)
     study = optuna.create_study(
