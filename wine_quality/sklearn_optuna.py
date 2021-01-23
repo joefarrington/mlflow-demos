@@ -16,6 +16,7 @@ from pathlib import Path
 import warnings
 import sys
 import git
+import shutil
 
 from omegaconf import DictConfig, OmegaConf
 import hydra
@@ -140,7 +141,7 @@ class Objective:
             # Log the hydra logs as an MLflow artifact
             temp_hydra_log_path = cwd.joinpath(self.cfg.hydra_logdir)
             mlflow.log_artifact(temp_hydra_log_path)
-            os.rmdir(temp_hydra_log_path)
+            shutil.rmtree(temp_hydra_log_path)
 
             # Log the model to MLflow
             mlflow.sklearn.log_model(reg, "model")
