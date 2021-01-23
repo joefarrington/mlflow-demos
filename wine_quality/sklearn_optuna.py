@@ -9,7 +9,7 @@
 
 # Using data from http://archive.ics.uci.edu/ml/datasets/Wine+Quality
 
-# TODO add in ability to set experiment name and other details for logging
+# TODO: Think about the best place for experiment name to be set, currently in model file
 
 import os
 from pathlib import Path
