@@ -163,7 +163,7 @@ def main(cfg):
     except:
         experiment_id = mlflow.get_experiment_by_name(
             cfg.sklearn_tune.experiment_id
-        ).experimend_id
+        ).experiment_id
 
     sampler = TPESampler(seed=cfg.sklearn_tune.random_state)
     study = optuna.create_study(
