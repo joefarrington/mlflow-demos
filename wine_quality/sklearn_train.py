@@ -6,8 +6,6 @@
 
 # Using data from http://archive.ics.uci.edu/ml/datasets/Wine+Quality
 
-# TODO add in ability to set experiment name and other details for logging
-
 import os
 from pathlib import Path
 import warnings
@@ -17,14 +15,12 @@ import git
 from omegaconf import DictConfig, OmegaConf
 import hydra
 
-import pandas as pd
 import numpy as np
+import pandas as pd
 import sklearn
 from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
 from sklearn.model_selection import train_test_split
-from urllib.parse import urlparse
 import mlflow
-import mlflow.sklearn
 
 
 def eval_metrics(actual, pred):
@@ -37,44 +33,31 @@ def eval_metrics(actual, pred):
 def load_data(path, label_col):
     df = pd.read_csv(path, index_col=0)
     X = df.drop(label_col, axis=1)
-    y = df[[label_col]]
+    y = df[label_col]
     return X, y
 
 
-@hydra.main(config_path="conf", config_name="config")
-def train_eval_model(cfg):
-
-    # Only proceed with the experiment if the repository is clean
-    repo = git.Repo(cfg.repo)
-    assert (
-        repo.is_dirty() is False
-    ), "Git repository is dirty, please commit before running experiment"
-
-    # Print the configuration
-    print(OmegaConf.to_yaml(cfg))
+def train_eval_model(dataset, model, hyperparameters, logdir=None, experiment_id=None):
 
     # Load the data
-    train_path = cfg.dataset.train_path
-    valid_path = cfg.dataset.valid_path
-    label_column = cfg.dataset.label_column
+    train_path = dataset.train_path
+    valid_path = dataset.valid_path
+    label_column = dataset.label_column
 
     cwd = Path.cwd()
     X_train, y_train = load_data(Path(cwd).joinpath(train_path), label_column)
     X_valid, y_valid = load_data(Path(cwd).joinpath(valid_path), label_column)
 
-    # Tell MLflow where to log the experiment
-    mlflow.set_tracking_uri(str(Path(cwd).joinpath("mlruns")))
+    with mlflow.start_run(experiment_id=experiment_id):
 
-    with mlflow.start_run():
-
-        # Instantiate the model based on config file
-        reg = hydra.utils.instantiate(cfg.sklearn_model)
+        # Set the hyperparameters
+        model.set_params(**hyperparameters)
 
         # Fit the model
-        reg.fit(X_train, y_train)
+        model.fit(X_train, y_train)
 
         # Predict on the validation set and calculate metrics
-        y_pred = reg.predict(X_valid)
+        y_pred = model.predict(X_valid)
 
         (rmse, mae, r2) = eval_metrics(y_valid, y_pred)
 
@@ -83,24 +66,54 @@ def train_eval_model(cfg):
         print(f"Validation set R2: {r2:.2f}")
 
         # Log all of the hyperparameters to MLflow
-        for key, value in cfg.sklearn_model.items():
-            if key == "_target_":
-                pass
-            else:
-                mlflow.log_param(key, value)
+        for key, value in hyperparameters.items():
+            mlflow.log_param(key, value)
 
         # Log the metrics to MLflow
         mlflow.log_metric("rmse", rmse)
         mlflow.log_metric("r2", r2)
         mlflow.log_metric("mae", mae)
 
-        # Log the hydra logs as an MLflow artifact
-        temp_hydra_log_path = cwd.joinpath(cfg.hydra_logdir)
-        mlflow.log_artifact(temp_hydra_log_path)
+        # If additional logs created, e.g. by Hydra, add as artifact
+        if logdir:
+            mlflow.log_artifact(logdir)
 
         # Log the model to MLflow
-        mlflow.sklearn.log_model(reg, "model")
+        mlflow.sklearn.log_model(model, "model")
+
+        return rmse
+
+
+@hydra.main(config_path="conf", config_name="config")
+def main(cfg):
+    # Only proceed with the experiment if the repository is clean
+    # repo = git.Repo(cfg.repo)
+    # assert (
+    #    repo.is_dirty() is False
+    # ), "Git repository is dirty, please commit before running experiment"
+
+    # Print the configuration
+    print(OmegaConf.to_yaml(cfg))
+
+    try:
+        mlflow.create_experiment(cfg.sklearn_train.experiment_id)
+    except:
+        pass
+
+    experiment_id = mlflow.get_experiment_by_name(
+        cfg.sklearn_train.experiment_id
+    ).experiment_id
+
+    model = hydra.utils.instantiate(cfg.sklearn_train.model)
+
+    train_eval_model(
+        model=model,
+        dataset=cfg.dataset,
+        hyperparameters=cfg.sklearn_train.hyperparameters,
+        logdir=cfg.hydra_logdir,
+        experiment_id=experiment_id,
+    )
 
 
 if __name__ == "__main__":
-    train_eval_model()
+    main()
