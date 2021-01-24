@@ -16,4 +16,4 @@ hyperparameters:
   fixed:
     random_state: 5
 n_trials: 5
-experiment_id: tune_elasticnet
+experiment_id: tune-elasticnet
