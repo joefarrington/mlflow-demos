@@ -1,17 +1,19 @@
 # @package _group_
 model:
   _target_: sklearn.linear_model.ElasticNet
-search_ranges:
-  alpha:
-    type: "float"
-    low: 1e-4
-    high: 1
-    log: True
-  l1_ratio:
-    type: "float"
-    low: 1e-4
-    high: 1
-    log: True
-random_state: 5
-n_trials: 50
+hyperparameters:
+  search_ranges:
+    alpha:
+      type: "float"
+      low: 1e-4
+      high: 1
+      log: True
+    l1_ratio:
+      type: "float"
+      low: 1e-4
+      high: 1
+      log: True
+  fixed:
+    random_state: 5
+n_trials: 5
 experiment_id: tune_elasticnet

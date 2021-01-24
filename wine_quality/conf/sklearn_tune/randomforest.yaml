@@ -1,0 +1,25 @@
+# @package _group_
+model:
+  _target_: sklearn.ensemble.RandomForestRegressor
+hyperparameters:
+  search_ranges:
+    n_estimators:
+      type: "int"
+      low: 50
+      high: 500
+      step: 50
+    max_features:
+      type: "categorical"
+      choices:
+        - "auto"
+        - "sqrt"
+        - "log2"
+    min_samples_leaf:
+      type: "float"
+      low: 0.05
+      high: 0.5
+  fixed:
+    random_state: 5
+    n_jobs: -1
+n_trials: 20
+experiment_id: tune_rf

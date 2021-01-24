@@ -1,5 +1,0 @@
-# @package _group_
-_target_: sklearn.linear_model.ElasticNet
-alpha: 1
-l1_ratio: 0.5
-random_state: 5
