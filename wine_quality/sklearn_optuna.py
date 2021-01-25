@@ -30,7 +30,7 @@ import mlflow
 
 from sklearn_train import train_eval_model
 
-# TODO: Consider the most efficient way to do this
+
 class SetHPs:
     def __init__(self, hp_config):
         self.hp_config_fixed = OmegaConf.to_container(hp_config.fixed)
@@ -97,10 +97,14 @@ class Objective:
 def main(cfg):
 
     # Only proceed with the experiment if the repository is clean
-    # repo = git.Repo("~/Documents/CDT/other_learning/mlflow/mlflow-demos")
-    # assert (
-    #    repo.is_dirty() is False
-    # ), "Git repository is dirty, please commit before running experiment"
+    if not cfg.debug:
+        repo = git.Repo(cfg.repo)
+        assert (
+            repo.is_dirty() is False
+        ), "Git repository is dirty, please commit before running experiment"
+    else:
+        Path(cfg.debug_output_subdir).mkdir(parents=True, exist_ok=True)
+        mlflow.set_tracking_uri(f"./{cfg.debug_output_subdir}")
 
     try:
         mlflow.create_experiment(cfg.sklearn_tune.experiment_id)
