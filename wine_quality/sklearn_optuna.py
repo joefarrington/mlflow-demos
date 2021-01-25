@@ -115,6 +115,8 @@ def main(cfg):
         cfg.sklearn_tune.experiment_id
     ).experiment_id
 
+    # TODO: Consider saving the Study object and/or creating Optuna visualizations
+
     sampler = TPESampler(seed=cfg.sklearn_tune.hyperparameters.fixed.random_state)
     study = optuna.create_study(direction="minimize", sampler=sampler)
 
