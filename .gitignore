@@ -136,6 +136,7 @@ wine_quality/notebook_playground
 
 # Data folders
 wine_quality/data
+wine_quality_ptl/data
 
 # MLflow run data
 mlruns
@@ -143,4 +144,7 @@ mlruns_debug
 
 # Hydra output
 hydra_output
+
+# Pytorch-lightning logs
+wine_quality_ptl/lightning_logs
 
