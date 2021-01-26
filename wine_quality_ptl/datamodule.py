@@ -5,14 +5,6 @@ from torch.utils.data import Dataset, DataLoader
 from pytorch_lightning.core.datamodule import LightningDataModule
 import pandas as pd
 
-
-def load_data(path, label_col):
-    df = pd.read_csv(path, index_col=0)
-    X = df.drop(label_col, axis=1)
-    y = df[label_col]
-    return X, y
-
-
 class WineDataset(Dataset):
     def __init__(self, path, label_col):
         df = pd.read_csv(path, index_col=0)
