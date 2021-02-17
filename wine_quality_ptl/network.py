@@ -25,13 +25,15 @@ class LitWine(LightningModule):
         x, y = batch
         y_pred = self(x)
         loss = F.mse_loss(y_pred, y)
+        self.log("train_mse", loss)
         return loss
 
     def validation_step(self, batch, batch_idx):
         x, y = batch
         y_pred = self(x)
-        loss = F.mse_loss(y_pred, y)
-        return loss
+        val_loss = F.mse_loss(y_pred, y)
+        self.log("valid_mse", val_loss)
+        return val_loss
 
     def configure_optimizers(self):
-        return Adam(self.parameters(), lr=1e-4)
+        return Adam(self.parameters(), lr=1e-5)
