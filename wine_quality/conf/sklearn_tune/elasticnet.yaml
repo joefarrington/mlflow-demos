@@ -16,4 +16,5 @@ hyperparameters:
   fixed:
     random_state: 5
 n_trials: 5
-experiment_id: tune-elasticnet
+mlflow_experiment_name: tune-elasticnet
+optuna_study_name: ${sklearn_tune.mlflow_experiment_name}

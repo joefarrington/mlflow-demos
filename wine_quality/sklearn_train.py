@@ -2,7 +2,7 @@
 # https://github.com/mlflow/mlflow/blob/master/examples/sklearn_elasticnet_wine/train.py
 
 # Incorporating Hydra for configuration following the repo of ymym3412
-# https://github.com/ymym3412/Hydra-MLflow-experiment-management
+# https://github.com/ymym3412/Hydra-MLflow-mlflow_experiment-management
 
 # Using data from http://archive.ics.uci.edu/ml/datasets/Wine+Quality
 
@@ -37,7 +37,9 @@ def load_data(path, label_col):
     return X, y
 
 
-def train_eval_model(dataset, model, hyperparameters, logdir=None, experiment_id=None):
+def train_eval_model(
+    dataset, model, hyperparameters, logdir=None, mlflow_experiment_id=None
+):
 
     # Load the data
     train_path = dataset.train_path
@@ -48,7 +50,7 @@ def train_eval_model(dataset, model, hyperparameters, logdir=None, experiment_id
     X_train, y_train = load_data(Path(cwd).joinpath(train_path), label_column)
     X_valid, y_valid = load_data(Path(cwd).joinpath(valid_path), label_column)
 
-    with mlflow.start_run(experiment_id=experiment_id):
+    with mlflow.start_run(experiment_id=mlflow_experiment_id):
 
         # Set the hyperparameters
         model.set_params(**hyperparameters)
@@ -86,7 +88,7 @@ def train_eval_model(dataset, model, hyperparameters, logdir=None, experiment_id
 
 @hydra.main(config_path="conf", config_name="config")
 def main(cfg):
-    # Only proceed with the experiment if the repository is clean
+    # Only proceed with the xperiment if the repository is clean
     if not cfg.debug:
         repo = git.Repo(cfg.repo)
         assert (
@@ -100,12 +102,12 @@ def main(cfg):
     print(OmegaConf.to_yaml(cfg))
 
     try:
-        mlflow.create_experiment(cfg.sklearn_train.experiment_id)
+        mlflow.create_experiment(cfg.sklearn_train.mlflow_experiment_name)
     except:
         pass
 
-    experiment_id = mlflow.get_experiment_by_name(
-        cfg.sklearn_train.experiment_id
+    mlflow_experiment_id = mlflow.get_experiment_by_name(
+        cfg.sklearn_train.mlflow_experiment_name
     ).experiment_id
 
     model = hydra.utils.instantiate(cfg.sklearn_train.model)
@@ -115,7 +117,7 @@ def main(cfg):
         dataset=cfg.dataset,
         hyperparameters=cfg.sklearn_train.hyperparameters,
         logdir=cfg.hydra_logdir,
-        experiment_id=experiment_id,
+        mlflow_experiment_id=mlflow_experiment_id,
     )
 
 

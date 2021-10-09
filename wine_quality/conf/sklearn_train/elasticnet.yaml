@@ -5,4 +5,4 @@ hyperparameters:
   alpha: 1
   l1_ratio: 0.5
   random_state: 5
-experiment_id: train-elasticnet
+mlflow_experiment_name: train-elasticnet

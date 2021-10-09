@@ -70,11 +70,16 @@ class SetHPs:
         return out_dict
 
 
+def construct_azure_postgres_url(db_user, db_pass, db_host, db_port, db_name):
+    storage_url = f"postgresql://{db_user}:{db_pass}@{db_host}:{db_port}/{db_name}?sslmode=require"
+    return storage_url
+
+
 class Objective:
-    def __init__(self, cfg, experiment_id):
+    def __init__(self, cfg, mlflow_experiment_id):
         self.cfg = cfg
         self.hp = SetHPs(cfg.sklearn_tune.hyperparameters)
-        self.experiment_id = experiment_id
+        self.mlflow_experiment_id = mlflow_experiment_id
 
     def __call__(self, trial):
 
@@ -87,7 +92,7 @@ class Objective:
             model=model,
             hyperparameters=hyperparameters,
             logdir=self.cfg.hydra_logdir,
-            experiment_id=self.experiment_id,
+            mlflow_experiment_id=self.mlflow_experiment_id,
         )
 
         return val_loss
@@ -107,20 +112,37 @@ def main(cfg):
         mlflow.set_tracking_uri(f"./{cfg.debug_output_subdir}")
 
     try:
-        mlflow.create_experiment(cfg.sklearn_tune.experiment_id)
+        mlflow.create_experiment(cfg.sklearn_tune.mlflow_experiment_name)
     except:
         pass
 
-    experiment_id = mlflow.get_experiment_by_name(
-        cfg.sklearn_tune.experiment_id
+    mlflow_experiment_id = mlflow.get_experiment_by_name(
+        cfg.sklearn_tune.mlflow_experiment_name
     ).experiment_id
 
-    # TODO: Consider saving the Study object and/or creating Optuna visualizations
+    # TODO: Consider creating Optuna visualizations
 
     sampler = TPESampler(seed=cfg.sklearn_tune.hyperparameters.fixed.random_state)
-    study = optuna.create_study(direction="minimize", sampler=sampler)
 
-    study.optimize(Objective(cfg, experiment_id), n_trials=cfg.sklearn_tune.n_trials)
+    # Check is we've specified remote storage
+    if "optuna_storage" in cfg.keys():
+        storage = construct_azure_postgres_url(**cfg["optuna_storage"])
+    else:
+        storage = None
+
+    # If using storage and the study already exists, then use the exisiting study
+    # This allows us to do further trials on an existing study, or do distributed optimization
+    study = optuna.create_study(
+        direction="minimize",
+        sampler=sampler,
+        storage=storage,
+        study_name=cfg.sklearn_tune.optuna_study_name,
+        load_if_exists=True,
+    )
+
+    study.optimize(
+        Objective(cfg, mlflow_experiment_id), n_trials=cfg.sklearn_tune.n_trials
+    )
 
 
 if __name__ == "__main__":
