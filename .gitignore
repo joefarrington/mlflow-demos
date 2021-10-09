@@ -144,3 +144,8 @@ mlruns_debug
 # Hydra output
 hydra_output
 
+## Jupyter notebooks
+wine_quality/notebooks
+
+# Config file with real db connection details
+wine_quality/conf/optuna_storage/jmfazure.yaml
