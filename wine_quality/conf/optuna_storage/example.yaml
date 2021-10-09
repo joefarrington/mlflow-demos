@@ -1,5 +1,5 @@
 db_user: {username}
 db_pass: {password}
-db_host: {databse host}
+db_host: {database host}
 db_port: {port}
 db_name : {schema name}
