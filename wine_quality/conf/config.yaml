@@ -2,7 +2,7 @@ hydra:
   run:
     dir: .
   output_subdir: ./hydra_output/${now:%Y-%m-%d}/${now:%H-%M-%S}
-repo: ~/Documents/CDT/other_learning/mlflow/mlflow-demos
+repo: ~/other_learning/mlflow_demos
 hydra_logdir: ${hydra:output_subdir}
 debug: False
 debug_output_subdir: mlruns_debug
