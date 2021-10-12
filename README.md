@@ -4,7 +4,7 @@ Explore setting up simple experiment tracking workflows using MLflow, uisng Hydr
 
 The script `sklearn_optuna.py` can take an optional configuration file for a RDB backend for Optuna (e.g. `conf/optuna_storage/example.yaml`). The construction of the RDB URL is set up for a PostgreSQL database hosted on Azure. If the RDB backend is used multiple copies of the script can be run to peform distributed tuning.
 
-Additionally, both `sklearn_train.py` and `sklearn_optuna.py` can taken an optional configuration file to uze Azure to track MLflow experiments (e.g. conf/azure_mlflow/example.yaml). The code currently assumes that authorization for access to the Azure workspace will be performed using the Azure CLI (see: https://docs.microsoft.com/en-us/cli/azure/install-azure-cli and https://github.com/Azure/MachineLearningNotebooks/blob/master/how-to-use-azureml/manage-azureml-service/authentication-in-azureml/authentication-in-azureml.ipynb for more information).
+Additionally, both `sklearn_train.py` and `sklearn_optuna.py` can taken an optional configuration file to uze Azure to track MLflow experiments (e.g. `conf/azure_mlflow/example.yaml`). The code currently assumes that authorization for access to the Azure workspace will be performed using the Azure CLI (see: https://docs.microsoft.com/en-us/cli/azure/install-azure-cli and https://github.com/Azure/MachineLearningNotebooks/blob/master/how-to-use-azureml/manage-azureml-service/authentication-in-azureml/authentication-in-azureml.ipynb for more information).
 
 MLfLow: https://www.mlflow.org/
 
