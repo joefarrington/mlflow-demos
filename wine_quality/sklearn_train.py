@@ -103,6 +103,8 @@ def train_eval_model(
     # Log the model to MLflow
     # mlflow.sklearn.log_model(model, "model")
 
+    mlflow_client.set_terminated(trial_mlflow_run_id)
+
     return rmse
 
 

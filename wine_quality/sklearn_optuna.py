@@ -176,6 +176,8 @@ def main(cfg):
     for k, v in study.best_params.items():
         mlflow_client.log_param(mlflow_parent_run_id, f"best_trial_{k}", v)
 
+    mlflow_client.set_terminated(mlflow_parent_run_id)
+
 
 if __name__ == "__main__":
     main()
