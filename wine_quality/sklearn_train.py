@@ -21,6 +21,8 @@ import sklearn
 from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
 from sklearn.model_selection import train_test_split
 import mlflow
+from mlflow.tracking import MlflowClient
+from mlflow.utils.mlflow_tags import MLFLOW_PARENT_RUN_ID
 
 from azureml.core import Workspace
 from azureml.core.authentication import AzureCliAuthentication
@@ -45,8 +47,18 @@ def train_eval_model(
     model,
     hyperparameters,
     logdir=None,
-    mlflow_experiment_id=None,
+    mlflow_client=None,
+    trial_mlflow_run_id=None,
+    mlflow_parent_experiment_id=None,
+    mlflow_parent_run_id=None,
 ):
+    # If creating a child run, create a child run ID
+    if mlflow_parent_run_id is not None and mlflow_parent_experiment_id is not None:
+        trial_mlflow_run = mlflow_client.create_run(
+            experiment_id=mlflow_parent_experiment_id,
+            tags={MLFLOW_PARENT_RUN_ID: mlflow_parent_run_id},
+        )
+        trial_mlflow_run_id = trial_mlflow_run.info.run_id
 
     # Load the data
     train_path = dataset.train_path
@@ -57,40 +69,38 @@ def train_eval_model(
     X_train, y_train = load_data(Path(cwd).joinpath(train_path), label_column)
     X_valid, y_valid = load_data(Path(cwd).joinpath(valid_path), label_column)
 
-    with mlflow.start_run(experiment_id=mlflow_experiment_id):
+    # Set the hyperparameters
+    model.set_params(**hyperparameters)
 
-        # Set the hyperparameters
-        model.set_params(**hyperparameters)
+    # Fit the model
+    model.fit(X_train, y_train)
 
-        # Fit the model
-        model.fit(X_train, y_train)
+    # Predict on the validation set and calculate metrics
+    y_pred = model.predict(X_valid)
 
-        # Predict on the validation set and calculate metrics
-        y_pred = model.predict(X_valid)
+    (rmse, mae, r2) = eval_metrics(y_valid, y_pred)
 
-        (rmse, mae, r2) = eval_metrics(y_valid, y_pred)
+    print(f"Validation set RMSE: {rmse:.2f}")
+    print(f"Validation set MAE: {mae:.2f}")
+    print(f"Validation set R2: {r2:.2f}")
 
-        print(f"Validation set RMSE: {rmse:.2f}")
-        print(f"Validation set MAE: {mae:.2f}")
-        print(f"Validation set R2: {r2:.2f}")
+    # Log all of the hyperparameters to MLflow
+    for key, value in hyperparameters.items():
+        mlflow_client.log_param(trial_mlflow_run_id, key, value)
 
-        # Log all of the hyperparameters to MLflow
-        for key, value in hyperparameters.items():
-            mlflow.log_param(key, value)
+    # Log the metrics to MLflow
+    mlflow_client.log_metric(trial_mlflow_run_id, "rmse", rmse)
+    mlflow_client.log_metric(trial_mlflow_run_id, "r2", r2)
+    mlflow_client.log_metric(trial_mlflow_run_id, "mae", mae)
 
-        # Log the metrics to MLflow
-        mlflow.log_metric("rmse", rmse)
-        mlflow.log_metric("r2", r2)
-        mlflow.log_metric("mae", mae)
+    # If additional logs created, e.g. by Hydra, add as artifact
+    if logdir:
+        mlflow_client.log_artifact(trial_mlflow_run_id, logdir)
 
-        # If additional logs created, e.g. by Hydra, add as artifact
-        if logdir:
-            mlflow.log_artifact(logdir)
+    # Log the model to MLflow
+    # mlflow.sklearn.log_model(model, "model")
 
-        # Log the model to MLflow
-        mlflow.sklearn.log_model(model, "model")
-
-        return rmse
+    return rmse
 
 
 @hydra.main(config_path="conf", config_name="config")
@@ -112,14 +122,19 @@ def main(cfg):
         ws = Workspace(**cfg.azure_mlflow, auth=AzureCliAuthentication())
         mlflow.set_tracking_uri(ws.get_mlflow_tracking_uri())
 
-    try:
-        mlflow.create_experiment(cfg.sklearn_train.mlflow_experiment_name)
-    except:
-        pass
+    mlflow_client = MlflowClient()
 
-    mlflow_experiment_id = mlflow.get_experiment_by_name(
-        cfg.sklearn_train.mlflow_experiment_name
-    ).experiment_id
+    try:
+        mlflow_experiment_id = mlflow_client.create_experiment(
+            cfg.sklearn_train.mlflow_experiment_name
+        )
+    except:
+        mlflow_experiment_id = mlflow_client.get_experiment_by_name(
+            cfg.sklearn_train.mlflow_experiment_name
+        ).experiment_id
+
+    mlflow_run = mlflow_client.create_run(experiment_id=mlflow_experiment)
+    mlflow_run_id = mlflow_run.info.run_id
 
     model = hydra.utils.instantiate(cfg.sklearn_train.model)
 
@@ -128,7 +143,8 @@ def main(cfg):
         dataset=cfg.dataset,
         hyperparameters=cfg.sklearn_train.hyperparameters,
         logdir=cfg.hydra_logdir,
-        mlflow_experiment_id=mlflow_experiment_id,
+        mlflow_client=mlflow_client,
+        trial_mlflow_run_id=mlflow_run_id,
     )
 
 

@@ -27,6 +27,8 @@ import numpy as np
 import sklearn
 from sklearn.model_selection import train_test_split
 import mlflow
+from mlflow.tracking import MlflowClient
+from mlflow.utils.mlflow_tags import MLFLOW_PARENT_RUN_ID
 
 from sklearn_train import train_eval_model
 
@@ -79,10 +81,14 @@ def construct_azure_postgres_url(db_user, db_pass, db_host, db_port, db_name):
 
 
 class Objective:
-    def __init__(self, cfg, mlflow_experiment_id):
+    def __init__(
+        self, cfg, mlflow_client, mlflow_parent_experiment_id, mlflow_parent_run_id
+    ):
         self.cfg = cfg
         self.hp = SetHPs(cfg.sklearn_tune.hyperparameters)
-        self.mlflow_experiment_id = mlflow_experiment_id
+        self.mlflow_client = mlflow_client
+        self.mlflow_parent_experiment_id = mlflow_parent_experiment_id
+        self.mlflow_parent_run_id = mlflow_parent_run_id
 
     def __call__(self, trial):
 
@@ -95,7 +101,9 @@ class Objective:
             model=model,
             hyperparameters=hyperparameters,
             logdir=self.cfg.hydra_logdir,
-            mlflow_experiment_id=self.mlflow_experiment_id,
+            mlflow_client=self.mlflow_client,
+            mlflow_parent_experiment_id=self.mlflow_parent_experiment_id,
+            mlflow_parent_run_id=self.mlflow_parent_run_id,
         )
 
         return val_loss
@@ -118,14 +126,23 @@ def main(cfg):
         ws = Workspace(**cfg.azure_mlflow, auth=AzureCliAuthentication())
         mlflow.set_tracking_uri(ws.get_mlflow_tracking_uri())
 
-    try:
-        mlflow.create_experiment(cfg.sklearn_tune.mlflow_experiment_name)
-    except:
-        pass
+    mlflow_client = MlflowClient()
 
-    mlflow_experiment_id = mlflow.get_experiment_by_name(
-        cfg.sklearn_tune.mlflow_experiment_name
-    ).experiment_id
+    try:
+        mlflow_parent_experiment_id = mlflow_client.create_experiment(
+            cfg.sklearn_tune.mlflow_experiment_name
+        )
+    except:
+        mlflow_parent_experiment_id = mlflow_client.get_experiment_by_name(
+            cfg.sklearn_tune.mlflow_experiment_name
+        ).experiment_id
+
+    mlflow_parent_run = mlflow_client.create_run(
+        experiment_id=mlflow_parent_experiment_id
+    )
+    mlflow_parent_run_id = mlflow_parent_run.info.run_id
+
+    mlflow_client.log_param(mlflow_parent_run_id, "n_trials", cfg.sklearn_tune.n_trials)
 
     # TODO: Consider creating Optuna visualizations
 
@@ -148,8 +165,15 @@ def main(cfg):
     )
 
     study.optimize(
-        Objective(cfg, mlflow_experiment_id), n_trials=cfg.sklearn_tune.n_trials
+        Objective(
+            cfg, mlflow_client, mlflow_parent_experiment_id, mlflow_parent_run_id
+        ),
+        n_trials=cfg.sklearn_tune.n_trials,
     )
+
+    mlflow_client.log_metric(mlflow_parent_run_id, "best_trial_rmse", study.best_value)
+    for k, v in study.best_params.items():
+        mlflow_client.log_param(mlflow_parent_run_id, f"best_trial_{k}", v)
 
 
 if __name__ == "__main__":
