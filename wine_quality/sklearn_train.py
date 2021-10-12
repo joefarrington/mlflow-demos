@@ -23,6 +23,7 @@ from sklearn.model_selection import train_test_split
 import mlflow
 from mlflow.tracking import MlflowClient
 from mlflow.utils.mlflow_tags import MLFLOW_PARENT_RUN_ID
+from jmf_mlflow_utils import get_mlflow_tags
 
 from azureml.core import Workspace
 from azureml.core.authentication import AzureCliAuthentication
@@ -56,7 +57,9 @@ def train_eval_model(
     if mlflow_parent_run_id is not None and mlflow_parent_experiment_id is not None:
         trial_mlflow_run = mlflow_client.create_run(
             experiment_id=mlflow_parent_experiment_id,
-            tags={MLFLOW_PARENT_RUN_ID: mlflow_parent_run_id},
+            tags=get_mlflow_tags(
+                manual_tags={MLFLOW_PARENT_RUN_ID: mlflow_parent_run_id}
+            ),
         )
         trial_mlflow_run_id = trial_mlflow_run.info.run_id
 
@@ -133,7 +136,9 @@ def main(cfg):
             cfg.sklearn_train.mlflow_experiment_name
         ).experiment_id
 
-    mlflow_run = mlflow_client.create_run(experiment_id=mlflow_experiment_id)
+    mlflow_run = mlflow_client.create_run(
+        experiment_id=mlflow_experiment_id, tags=get_mlflow_tags()
+    )
     mlflow_run_id = mlflow_run.info.run_id
 
     model = hydra.utils.instantiate(cfg.sklearn_train.model)
