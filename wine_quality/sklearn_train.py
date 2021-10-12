@@ -133,7 +133,7 @@ def main(cfg):
             cfg.sklearn_train.mlflow_experiment_name
         ).experiment_id
 
-    mlflow_run = mlflow_client.create_run(experiment_id=mlflow_experiment)
+    mlflow_run = mlflow_client.create_run(experiment_id=mlflow_experiment_id)
     mlflow_run_id = mlflow_run.info.run_id
 
     model = hydra.utils.instantiate(cfg.sklearn_train.model)
