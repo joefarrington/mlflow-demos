@@ -30,6 +30,9 @@ import mlflow
 
 from sklearn_train import train_eval_model
 
+from azureml.core import Workspace
+from azureml.core.authentication import AzureCliAuthentication
+
 
 class SetHPs:
     def __init__(self, hp_config):
@@ -110,6 +113,10 @@ def main(cfg):
     else:
         Path(cfg.debug_output_subdir).mkdir(parents=True, exist_ok=True)
         mlflow.set_tracking_uri(f"./{cfg.debug_output_subdir}")
+
+    if "azure_mlflow" in cfg.keys():
+        ws = Workspace(**cfg.azure_mlflow, auth=AzureCliAuthentication())
+        mlflow.set_tracking_uri(ws.get_mlflow_tracking_uri())
 
     try:
         mlflow.create_experiment(cfg.sklearn_tune.mlflow_experiment_name)

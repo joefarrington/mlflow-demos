@@ -22,6 +22,9 @@ from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
 from sklearn.model_selection import train_test_split
 import mlflow
 
+from azureml.core import Workspace
+from azureml.core.authentication import AzureCliAuthentication
+
 
 def eval_metrics(actual, pred):
     rmse = np.sqrt(mean_squared_error(actual, pred))
@@ -38,7 +41,11 @@ def load_data(path, label_col):
 
 
 def train_eval_model(
-    dataset, model, hyperparameters, logdir=None, mlflow_experiment_id=None
+    dataset,
+    model,
+    hyperparameters,
+    logdir=None,
+    mlflow_experiment_id=None,
 ):
 
     # Load the data
@@ -100,6 +107,10 @@ def main(cfg):
 
     # Print the configuration
     print(OmegaConf.to_yaml(cfg))
+
+    if "azure_mlflow" in cfg.keys():
+        ws = Workspace(**cfg.azure_mlflow, auth=AzureCliAuthentication())
+        mlflow.set_tracking_uri(ws.get_mlflow_tracking_uri())
 
     try:
         mlflow.create_experiment(cfg.sklearn_train.mlflow_experiment_name)

@@ -1,0 +1,3 @@
+subscription_id: {Azure subscription ID}
+resource_group: {Azure resource group}
+workspace_name: {Azure workspace name}
